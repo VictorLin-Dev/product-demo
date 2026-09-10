@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>主介面 — 對話 × 流程圖</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B1119; --dot:#1A2530;
+  --rail-bg:#0A0F16; --rail-fg:#69788A; --rail-fg-active:#EAF2F7; --rail-active-bg:#1A2531; --rail-border:#1B2531;
+  --card-bg:#141C26; --card-border:#232F3D; --card-shadow:0 24px 60px rgba(0,0,0,.45);
+  --composer-bg:#1B2531; --composer-border:#324259; --composer-fg:#E7EDF3;
+  --ink:#E7EDF3; --ink-soft:#8996A5; --ink-faint:#5C6C7D;
+  --accent:#4EB1D8; --accent-ink:#08222C;
+  --node-bg:#141C26; --node-border:#243040; --node-radius:12px;
+  --frame-a:#2A3B4E; --frame-b:#1C2836; --frame-border:#324259; --frame-dur-bg:rgba(6,10,15,.78); --frame-dur-fg:#DCE5ED;
+  --gate-btn-bg:#1C2733; --gate-btn-border:#324259; --gate-btn-fg:#C4D0DC;
+  --gate-h:#DA9A45; --gate-a:#5FA8D9; --gate-n:#69788A;
+  --menu-bg:#141C26; --menu-border:#2A384A; --menu-hover:#1E2A38;
+  --mk-bg:#1C2733; --mk-border:#324259; --mk-fg:#8996A5;
+  --keep:#39B57D; --keep-fg:#8FE3B8; --keep-bg:rgba(57,181,125,.16);
+  --run:#DA9A45; --run-fg:#EAC17E; --run-bg:rgba(218,154,69,.16);
+  --fix:#DE6E5C; --fix-fg:#F0A697; --fix-bg:rgba(222,110,92,.18);
+  --idle:#69788A; --idle-fg:#9AA9B8; --idle-bg:rgba(105,120,138,.16);
+  --add-border:#324259; --add-bg:rgba(27,37,49,.55); --add-fg:#7E8FA0; --add-hover:#5FA8D9;
+  --fixbox-bg:#182430; --fixbox-border:#324259; --fixbox-shadow:0 20px 48px rgba(0,0,0,.5);
+  --input-bg:#101820; --input-border:#324259;
+  --wire:#3A4B5F; --wire-dim:#26333F;
+  --sans:"IBM Plex Sans","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --mono:"IBM Plex Mono","Noto Sans TC",ui-monospace,monospace;
+}
+:root[data-theme="light"]{
+  --bg:#F2F0EA; --dot:#E1DDD2;
+  --rail-bg:#EAE6DC; --rail-fg:#8D8676; --rail-fg-active:#242019; --rail-active-bg:#DDD7C8; --rail-border:#DAD5C7;
+  --card-bg:#FFFFFF; --card-border:#E4E0D5; --card-shadow:0 20px 48px rgba(80,70,50,.14);
+  --composer-bg:#F1F4F5; --composer-border:#D8DEE1; --composer-fg:#1C2530;
+  --ink:#1C2530; --ink-soft:#69707C; --ink-faint:#9AA0A8;
+  --accent:#1F6E8C; --accent-ink:#FFFFFF;
+  --node-bg:#FFFFFF; --node-border:#E4E0D5; --node-radius:12px;
+  --frame-a:#DCE4E8; --frame-b:#C7D2D8; --frame-border:#BFCAD0; --frame-dur-bg:rgba(255,255,255,.85); --frame-dur-fg:#1C2530;
+  --gate-btn-bg:#F3F2ED; --gate-btn-border:#DDD8CC; --gate-btn-fg:#40454D;
+  --gate-h:#B87A22; --gate-a:#28688A; --gate-n:#8D8676;
+  --menu-bg:#FFFFFF; --menu-border:#E4E0D5; --menu-hover:#F4F2EB;
+  --mk-bg:#F3F2ED; --mk-border:#DDD8CC; --mk-fg:#847E70;
+  --keep:#2E8657; --keep-fg:#1E6B41; --keep-bg:rgba(46,134,87,.13);
+  --run:#B87A22; --run-fg:#8F5E14; --run-bg:rgba(184,122,34,.14);
+  --fix:#B34C3A; --fix-fg:#93392A; --fix-bg:rgba(179,76,58,.13);
+  --idle:#8D93A0; --idle-fg:#5E6470; --idle-bg:rgba(141,147,160,.14);
+  --add-border:#CFCABC; --add-bg:rgba(255,255,255,.6); --add-fg:#8D8676; --add-hover:#28688A;
+  --fixbox-bg:#FFFFFF; --fixbox-border:#E4E0D5; --fixbox-shadow:0 20px 44px rgba(80,70,50,.18);
+  --input-bg:#FAF9F5; --input-border:#DDD8CC;
+  --wire:#C6C0B2; --wire-dim:#DAD5C7;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  font-family:var(--sans); color:var(--ink); background:var(--bg);
+  background-image:radial-gradient(circle at 1px 1px, var(--dot) 1.4px, transparent 0);
+  background-size:24px 24px;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit}
+
+.app{height:100vh;display:flex;align-items:stretch}
+
+/* ---------- rail ---------- */
+.rail{
+  width:68px;flex:none;background:var(--rail-bg);border-right:1px solid var(--rail-border);
+  display:flex;flex-direction:column;align-items:center;padding:18px 0;gap:6px;position:relative;z-index:5;
+}
+.rail-mark{
+  width:34px;height:34px;border-radius:10px;display:grid;place-items:center;margin-bottom:14px;
+  background:var(--accent);color:var(--accent-ink);flex:none;
+}
+.rail-mark svg{width:18px;height:18px}
+.rail-divider{width:26px;height:1px;background:var(--rail-border);margin:8px 0}
+.rail-btn{
+  width:40px;height:40px;border-radius:10px;border:none;background:transparent;color:var(--rail-fg);
+  display:grid;place-items:center;cursor:pointer;position:relative;flex:none;
+  transition:background .15s,color .15s;
+}
+.rail-btn svg{width:19px;height:19px}
+.rail-btn:hover{background:var(--rail-active-bg);color:var(--rail-fg-active)}
+.rail-btn.active{background:var(--rail-active-bg);color:var(--rail-fg-active)}
+.rail-spacer{flex:1}
+.rail-pop{
+  position:absolute;left:56px;background:var(--menu-bg);border:1px solid var(--menu-border);
+  border-radius:8px;padding:8px 12px;font-size:12.5px;color:var(--ink);white-space:nowrap;
+  box-shadow:var(--card-shadow);z-index:30;pointer-events:none;opacity:0;transform:translateX(-4px);
+  transition:opacity .12s,transform .12s;
+}
+.rail-pop.show{opacity:1;transform:translateX(0)}
+.theme-toggle .icon-sun,.theme-toggle .icon-moon{grid-area:1/1}
+.theme-toggle svg{grid-column:1;grid-row:1}
+:root[data-theme="dark"] .theme-toggle .icon-sun{display:none}
+:root[data-theme="light"] .theme-toggle .icon-moon{display:none}
+
+/* ---------- chat card ---------- */
+.chat-wrap{flex:none;display:flex;align-items:stretch;padding:20px 0 20px 20px}
+.chat-card{
+  width:376px;background:var(--card-bg);border:1px solid var(--card-border);border-radius:26px;
+  box-shadow:var(--card-shadow);display:flex;flex-direction:column;overflow:hidden;min-height:0;
+}
+.chat-head{
+  display:flex;align-items:center;gap:9px;padding:20px 22px 14px;flex:none;
+}
+.chat-dot{width:7px;height:7px;border-radius:50%;background:var(--keep);flex:none}
+.chat-head h1{margin:0;font-size:14.5px;font-weight:600;color:var(--ink)}
+.thread{flex:1;overflow-y:auto;padding:2px 22px 14px;display:flex;flex-direction:column;gap:14px;min-height:0}
+.msg{font-size:13.5px;line-height:1.62;animation:msgin .22s ease}
+@keyframes msgin{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.msg .who{font-size:10.5px;color:var(--ink-faint);margin-bottom:5px;font-weight:500}
+.msg.user .bubble{
+  background:var(--composer-bg);border:1px solid var(--composer-border);
+  border-radius:3px 14px 14px 14px;padding:10px 13px;color:var(--ink);
+}
+.msg.agent .bubble{padding:0 0 0 12px;border-left:2px solid var(--accent);color:var(--ink)}
+.msg.agent.flag .bubble{border-left-color:var(--fix)}
+.bubble p{margin:0 0 7px}
+.bubble p:last-child{margin-bottom:0}
+.qlist{margin:6px 0 0;padding-left:16px;color:var(--ink)}
+.qlist li{margin-bottom:3px}
+.plan{margin:9px 0 0;border:1px solid var(--card-border);border-radius:10px;background:var(--bg);overflow:hidden}
+.plan div{display:flex;justify-content:space-between;gap:10px;padding:6px 10px;font-size:11.5px;border-bottom:1px solid var(--card-border);color:var(--ink-soft)}
+.plan div:last-child{border-bottom:0}
+.plan em{font-style:normal;color:var(--ink)}
+.acts{display:flex;gap:8px;margin-top:11px}
+.pbtn{
+  font:inherit;font-size:12.5px;padding:7px 13px;border-radius:8px;cursor:pointer;
+  border:1px solid var(--accent);background:transparent;color:var(--accent);transition:opacity .15s;
+}
+.pbtn.solid{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.pbtn:hover{opacity:.78}
+.pbtn[disabled]{opacity:.35;cursor:default;pointer-events:none}
+.plan-note{font-size:11.5px;color:var(--accent);margin-top:9px;display:none;line-height:1.5}
+
+.composer-shell{flex:none;padding:14px 18px 18px}
+.composer{
+  display:flex;align-items:flex-end;gap:8px;background:var(--composer-bg);
+  border:1px solid var(--composer-border);border-radius:16px;padding:10px 10px 10px 15px;
+}
+.composer-field{
+  flex:1;min-height:20px;max-height:90px;overflow-y:auto;font-size:13px;line-height:1.5;
+  color:var(--composer-fg);outline:none;
+}
+.composer-field:empty::before{content:attr(data-placeholder);color:var(--ink-faint)}
+.send-btn{
+  flex:none;width:32px;height:32px;border-radius:50%;border:none;background:var(--accent);
+  color:var(--accent-ink);display:grid;place-items:center;cursor:pointer;transition:opacity .15s;
+}
+.send-btn svg{width:15px;height:15px}
+.send-btn:hover{opacity:.85}
+
+/* ---------- canvas ---------- */
+.canvas{flex:1;position:relative;overflow:auto;min-width:0}
+.canvas-hd{
+  position:sticky;top:0;left:0;z-index:6;display:flex;align-items:center;
+  padding:22px 26px 0;pointer-events:none;
+}
+.canvas-title{font-size:13px;color:var(--ink-soft);font-weight:500;pointer-events:auto}
+.canvas-hd .spacer{flex:1}
+.icon-btn{
+  pointer-events:auto;width:32px;height:32px;border-radius:9px;border:1px solid var(--card-border);
+  background:var(--card-bg);color:var(--ink-soft);display:grid;place-items:center;cursor:pointer;
+}
+.icon-btn svg{width:15px;height:15px}
+.icon-btn:hover{color:var(--ink)}
+
+.stage{position:relative;width:940px;height:870px;margin:56px 26px 60px}
+svg.wires{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+
+.node{
+  position:absolute;background:var(--node-bg);border:1px solid var(--node-border);
+  border-radius:var(--node-radius);padding:13px 14px 12px;color:var(--ink);
+  transition:border-color .25s,box-shadow .25s,opacity .25s;
+}
+.node .idx{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint)}
+.node h3{margin:3px 0 2px;font-size:13.5px;font-weight:600;color:var(--ink)}
+.tool{font-size:11.5px;color:var(--ink-soft)}
+.tool .tag-alt{color:var(--accent)}
+.frame{
+  margin-top:9px;height:68px;border-radius:8px;position:relative;overflow:hidden;
+  background:linear-gradient(148deg,var(--frame-a),var(--frame-b) 55%,var(--frame-a));
+  border:1px solid var(--frame-border);
+}
+.frame.wide{height:48px}
+.frame::after{content:"";position:absolute;inset:0;
+  background:repeating-linear-gradient(115deg,rgba(255,255,255,.05) 0 2px,transparent 2px 9px)}
+.frame .dur{
+  position:absolute;right:6px;bottom:5px;z-index:2;font-family:var(--mono);font-size:10px;
+  color:var(--frame-dur-fg);background:var(--frame-dur-bg);padding:2px 6px;border-radius:4px;
+}
+
+.gate{margin-top:9px;display:flex;align-items:center;gap:6px;font-size:11px;
+      border-top:1px solid var(--node-border);padding-top:9px;position:relative}
+.gate .lab{color:var(--ink-faint);flex:none}
+.sel{
+  display:inline-flex;align-items:center;gap:5px;padding:4px 8px 4px 9px;border-radius:7px;
+  border:1px solid var(--gate-btn-border);background:var(--gate-btn-bg);color:var(--gate-btn-fg);
+  font-size:11px;cursor:pointer;user-select:none;flex:none;transition:border-color .15s;
+}
+.sel:hover{border-color:var(--accent)}
+.sel::after{content:"";width:0;height:0;margin-left:2px;
+  border-left:3.5px solid transparent;border-right:3.5px solid transparent;border-top:4px solid var(--ink-faint)}
+.sel .dt{width:6px;height:6px;border-radius:2px;flex:none}
+.gate-menu{
+  position:fixed;background:var(--menu-bg);border:1px solid var(--menu-border);
+  border-radius:9px;box-shadow:var(--card-shadow);z-index:9999;overflow:hidden;min-width:110px;
+}
+.gate-menu button{display:flex;align-items:center;gap:7px;width:100%;text-align:left;font:inherit;font-size:11.5px;
+  color:var(--ink);background:none;border:none;padding:8px 11px;cursor:pointer}
+.gate-menu button:hover{background:var(--menu-hover)}
+.gate-menu .dt{width:7px;height:7px;border-radius:2px;flex:none}
+
+.foot{display:flex;align-items:center;justify-content:space-between;margin-top:9px;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 9px 3px 7px;border-radius:20px;white-space:nowrap}
+.chip .pip{width:6px;height:6px;border-radius:50%;flex:none}
+.chip.keep{background:var(--keep-bg);color:var(--keep-fg)}
+.chip.run{background:var(--run-bg);color:var(--run-fg)}
+.chip.fix{background:var(--fix-bg);color:var(--fix-fg)}
+.chip.idle{background:var(--idle-bg);color:var(--idle-fg)}
+.cost{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint)}
+
+.marks{position:absolute;top:-11px;right:11px;display:none;gap:5px}
+.marks.show{display:flex}
+.mk{
+  width:23px;height:23px;border-radius:50%;display:grid;place-items:center;font-size:12px;
+  line-height:1;border:1px solid var(--mk-border);background:var(--mk-bg);color:var(--mk-fg);cursor:pointer;
+  padding:0;font-family:inherit;transition:background .15s,border-color .15s,color .15s;
+}
+.mk:hover{border-color:var(--accent)}
+.mk.on-keep{background:var(--keep);border-color:var(--keep);color:#fff}
+.mk.on-fix{background:var(--fix);border-color:var(--fix);color:#fff}
+
+.node.keep{border-color:color-mix(in srgb, var(--keep) 55%, var(--node-border))}
+.node.run{border-color:color-mix(in srgb, var(--run) 55%, var(--node-border))}
+.node.fix{border-color:var(--fix);box-shadow:0 0 0 3px var(--fix-bg)}
+.node.idle{opacity:.62}
+.node.pulse{box-shadow:0 0 0 3px var(--run-bg)}
+.bar-run{height:3px;background:var(--node-border);border-radius:2px;margin-top:9px;overflow:hidden;display:none}
+.bar-run.show{display:block}
+.bar-run i{display:block;height:100%;width:62%;background:var(--run);transition:width .8s linear}
+.src{border-style:dashed}
+.src .fname{font-family:var(--mono);font-size:11px;color:var(--ink-soft);margin-top:5px}
+
+.addnode{
+  position:absolute;border:1px dashed var(--add-border);border-radius:var(--node-radius);
+  background:var(--add-bg);color:var(--add-fg);padding:12px 14px;font-size:12.5px;
+  cursor:pointer;transition:border-color .2s;
+}
+.addnode:hover{border-color:var(--add-hover)}
+.addnode .lab{display:flex;align-items:center;gap:7px;font-weight:600;color:var(--ink-soft)}
+.addnode .lab svg{width:14px;height:14px}
+.addnode .opts{display:none;gap:8px;margin-top:11px}
+.addnode .opts.show{display:flex}
+.addnode .opts button{
+  font:inherit;font-size:11.5px;padding:7px 11px;border-radius:7px;border:1px solid var(--gate-btn-border);
+  background:var(--gate-btn-bg);color:var(--gate-btn-fg);cursor:pointer;
+}
+.addnode .opts button:hover{border-color:var(--accent);color:var(--ink)}
+.addnode .confirm{display:none;color:var(--keep-fg);font-size:11.5px;margin-top:9px}
+.addnode .confirm.show{display:block}
+
+.fixbox{
+  position:absolute;background:var(--fixbox-bg);color:var(--ink);border-radius:16px;border:1px solid var(--fixbox-border);
+  box-shadow:var(--fixbox-shadow);padding:15px 16px;transition:top .3s,left .3s;z-index:10;
+}
+.fixbox.hide{display:none}
+.fixbox h4{margin:0 0 10px;font-size:13px;font-weight:600}
+.fixbox .fbi{
+  background:var(--input-bg);border:1px solid var(--input-border);border-radius:9px;padding:10px 11px;
+  font-size:12.5px;line-height:1.55;min-height:48px;cursor:text;color:var(--ink);outline:none;
+}
+.fixbox .fbi:empty::before{content:attr(data-placeholder);color:var(--ink-faint)}
+.fixbox .fbi:focus{border-color:var(--accent)}
+.fixbox .acts{margin-top:11px}
+.fixbox .pbtn{font-size:12px;padding:6px 11px}
+
+/* ---------- responsive ---------- */
+@media (max-width:1060px){
+  .app{flex-direction:column;height:auto;min-height:100vh}
+  .rail{width:100%;flex-direction:row;padding:10px 14px;border-right:0;border-bottom:1px solid var(--rail-border)}
+  .rail-mark{margin-bottom:0;margin-right:6px}
+  .rail-divider{width:1px;height:22px;margin:0 4px}
+  .rail-spacer{display:none}
+  .chat-wrap{padding:16px}
+  .chat-card{width:100%;height:420px}
+  .canvas{height:640px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- rail -->
+  <nav class="rail">
+    <div class="rail-mark">
+      <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="6" stroke="currentColor" stroke-width="1.7"/><circle cx="15" cy="9" r="2.3" fill="currentColor"/></svg>
+    </div>
+    <div class="rail-divider"></div>
+    <button class="rail-btn active" data-pop="工作區" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/>
+        <rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/>
+      </svg>
+    </button>
+    <button class="rail-btn" data-pop="功能包" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3.2l7.8 4.3v9L12 20.8l-7.8-4.3v-9L12 3.2z"/><path d="M4.4 7.6L12 12l7.6-4.4"/><path d="M12 12v8.8"/>
+      </svg>
+    </button>
+    <button class="rail-btn" data-pop="專案設定" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+        <line x1="4" y1="7" x2="20" y2="7"/><circle cx="14" cy="7" r="2" fill="currentColor" stroke="none"/>
+        <line x1="4" y1="14" x2="20" y2="14"/><circle cx="8" cy="14" r="2" fill="currentColor" stroke="none"/>
+        <line x1="4" y1="21" x2="20" y2="21"/><circle cx="16" cy="21" r="2" fill="currentColor" stroke="none"/>
+      </svg>
+    </button>
+    <div class="rail-spacer"></div>
+    <button class="rail-btn theme-toggle" id="themeToggle" data-pop="切換外觀" type="button">
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+        <circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.4M12 19.1v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/>
+      </svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z"/>
+      </svg>
+    </button>
+    <button class="rail-btn" data-pop="使用者" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="8.2" r="3.3"/><path d="M5.2 20c1.2-3.6 3.9-5.3 6.8-5.3s5.6 1.7 6.8 5.3"/>
+      </svg>
+    </button>
+  </nav>
+
+  <!-- chat -->
+  <div class="chat-wrap">
+    <section class="chat-card">
+      <div class="chat-head"><span class="chat-dot"></span><h1>主 Agent</h1></div>
+      <div class="thread" id="thread">
+
+        <div class="msg user">
+          <div class="who">你</div>
+          <div class="bubble">我要做一支 App 廣告影片。人物實際操作我們的 App，中間放產品錄屏。主打進階玩家可用指標設定定期定額，新手也有簡單介面。</div>
+        </div>
+
+        <div class="msg agent">
+          <div class="who">主 Agent</div>
+          <div class="bubble"><p>開工前確認兩件事：</p>
+            <ol class="qlist"><li>影片長度抓 30 秒還是 45 秒？</li><li>節奏偏冷靜說明，還是快剪？</li></ol></div>
+        </div>
+
+        <div class="msg user">
+          <div class="who">你</div>
+          <div class="bubble">45 秒，整體快剪，但講定期定額功能那段要慢下來。</div>
+        </div>
+
+        <div class="msg agent">
+          <div class="who">主 Agent</div>
+          <div class="bubble">
+            <p>流程排好了，6 個步驟。三段影片沒有相依，同時生成；字幕等影片，合成排最後。</p>
+            <div class="plan">
+              <div><span>會停下來等你</span><em>2a、2b、2c</em></div>
+              <div><span>自動跑完</span><em>1、3、4</em></div>
+            </div>
+            <div class="acts">
+              <button class="pbtn solid" id="btnRun" type="button">開始執行</button>
+              <button class="pbtn" id="btnAdjust" type="button">先調整流程</button>
+            </div>
+            <div class="plan-note" id="planNote"></div>
+          </div>
+        </div>
+
+        <div class="msg agent flag">
+          <div class="who">主 Agent</div>
+          <div class="bubble">
+            <p>第 2c 段的滑動手勢和錄屏第 3 秒對不上，我標成需修改，下游沒有往下跑。</p>
+            <p>你可以在那一格直接說要改什麼，或告訴我，我幫你改。</p>
+          </div>
+        </div>
+
+      </div>
+      <div class="composer-shell">
+        <div class="composer">
+          <div class="composer-field" id="composerInput" contenteditable="true" data-placeholder="跟主 Agent 說話…"></div>
+          <button class="send-btn" id="sendBtn" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- canvas -->
+  <section class="canvas" id="canvas">
+    <div class="canvas-hd">
+      <span class="canvas-title">券商 App 廣告影片</span>
+      <span class="spacer"></span>
+      <button class="icon-btn" id="resetBtn" title="重置示範" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="stage" id="stage">
+      <svg class="wires" viewBox="0 0 940 870" preserveAspectRatio="none">
+        <defs>
+          <marker id="ar" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0,0 L8,4 L0,8 z" fill="var(--wire)"/></marker>
+          <marker id="ard" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0,0 L8,4 L0,8 z" fill="var(--wire-dim)"/></marker>
+        </defs>
+        <g fill="none" stroke="var(--wire)" stroke-width="1.4" marker-end="url(#ar)">
+          <path d="M190,70 H230 V96.5 H270"/>
+          <path d="M420,173 V185 H125 V196"/>
+          <path d="M420,173 V185 H390 V196"/>
+          <path d="M420,173 V185 H655 V196"/>
+          <path d="M290,597 V614"/>
+        </g>
+        <path id="wire-blocked" d="M655,426 V435 H290 V444" fill="none" stroke="var(--wire-dim)" stroke-width="1.4"
+              stroke-dasharray="5 5" marker-end="url(#ard)"/>
+      </svg>
+
+      <div class="node src" style="left:10px;top:20px;width:180px">
+        <div class="idx">素材</div>
+        <h3 style="font-size:12.5px;margin-top:2px">你上傳的檔案</h3>
+        <div class="fname">操作錄屏.mp4</div>
+        <div class="fname">產品說明.pdf</div>
+      </div>
+
+      <!-- 1 -->
+      <div class="node keep" data-node="n1" data-gate="none" data-status="keep" style="left:270px;top:20px;width:300px">
+        <div class="marks"><button class="mk" data-mk="keep" type="button">✓</button><button class="mk" data-mk="fix" type="button">✕</button></div>
+        <div class="idx">步驟 1</div>
+        <h3>腳本與分鏡</h3>
+        <div class="tool">語言模型・依產品說明拆成 3 段</div>
+        <div class="gate">
+          <span class="lab">審核</span>
+          <span class="sel" data-gate-btn><i class="dt" style="background:var(--gate-n)"></i><span class="gt-label">不審</span></span>
+        </div>
+        <div class="foot">
+          <span class="chip keep"><i class="pip" style="background:var(--keep)"></i><span class="chip-txt">已通過</span></span>
+          <span class="cost">執行 4 點</span>
+        </div>
+      </div>
+
+      <!-- 2a -->
+      <div class="node keep" data-node="n2a" data-gate="human" data-status="keep" style="left:10px;top:196px;width:230px">
+        <div class="marks show"><button class="mk on-keep" data-mk="keep" type="button">✓</button><button class="mk" data-mk="fix" type="button">✕</button></div>
+        <div class="idx">步驟 2a</div>
+        <h3>開場：人物拿起手機</h3>
+        <div class="tool">影片模型</div>
+        <div class="frame"><span class="dur">0:00–0:12</span></div>
+        <div class="gate">
+          <span class="lab">審核</span>
+          <span class="sel" data-gate-btn><i class="dt" style="background:var(--gate-h)"></i><span class="gt-label">人審</span></span>
+        </div>
+        <div class="foot">
+          <span class="chip keep"><i class="pip" style="background:var(--keep)"></i><span class="chip-txt">你已放行</span></span>
+          <span class="cost">執行 96 點</span>
+        </div>
+      </div>
+
+      <!-- 2b -->
+      <div class="node run" data-node="n2b" data-gate="human" data-status="run" style="left:275px;top:196px;width:230px">
+        <div class="marks show"><button class="mk" data-mk="keep" type="button">✓</button><button class="mk" data-mk="fix" type="button">✕</button></div>
+        <div class="idx">步驟 2b</div>
+        <h3>功能段：定期定額設定</h3>
+        <div class="tool">影片模型</div>
+        <div class="frame"><span class="dur">0:12–0:33</span></div>
+        <div class="gate">
+          <span class="lab">審核</span>
+          <span class="sel" data-gate-btn><i class="dt" style="background:var(--gate-h)"></i><span class="gt-label">人審</span></span>
+        </div>
+        <div class="bar-run show"><i style="width:62%"></i></div>
+        <div class="foot">
+          <span class="chip run"><i class="pip" style="background:var(--run)"></i><span class="chip-txt">生成中 62%</span></span>
+          <span class="cost">預估 148 點</span>
+        </div>
+      </div>
+
+      <!-- 2c -->
+      <div class="node fix" data-node="n2c" data-gate="human" data-status="fix" style="left:540px;top:196px;width:230px">
+        <div class="marks show"><button class="mk" data-mk="keep" type="button">✓</button><button class="mk on-fix" data-mk="fix" type="button">✕</button></div>
+        <div class="idx">步驟 2c</div>
+        <h3>收尾：新手介面</h3>
+        <div class="tool">影片模型</div>
+        <div class="frame"><span class="dur">0:33–0:45</span></div>
+        <div class="gate">
+          <span class="lab">審核</span>
+          <span class="sel" data-gate-btn><i class="dt" style="background:var(--gate-h)"></i><span class="gt-label">人審</span></span>
+        </div>
+        <div class="foot">
+          <span class="chip fix"><i class="pip" style="background:var(--fix)"></i><span class="chip-txt">你打了叉</span></span>
+          <span class="cost">已扣 88 點</span>
+        </div>
+      </div>
+
+      <!-- fixbox -->
+      <div class="fixbox" id="fixbox" style="left:520px;top:432px;width:300px">
+        <h4>修改這一格</h4>
+        <div class="fbi" id="fixboxInput" contenteditable="true" data-placeholder="描述你要怎麼修改…">滑動手勢改成由下往上，速度放慢，跟錄屏第 3 秒的畫面對齊</div>
+        <div class="acts">
+          <button class="pbtn solid" id="btnRerun" type="button">重跑這一格</button>
+          <button class="pbtn" id="btnSwapModel" type="button">換一個模型</button>
+        </div>
+      </div>
+
+      <!-- 3 -->
+      <div class="node idle" data-node="n3" data-gate="none" data-status="idle" data-dep="n2c" style="left:170px;top:444px;width:240px">
+        <div class="marks"><button class="mk" data-mk="keep" type="button">✓</button><button class="mk" data-mk="fix" type="button">✕</button></div>
+        <div class="idx">步驟 3</div>
+        <h3>AI 聽寫、產生字幕</h3>
+        <div class="tool">語音辨識・繁中斷句</div>
+        <div class="gate">
+          <span class="lab">審核</span>
+          <span class="sel" data-gate-btn><i class="dt" style="background:var(--gate-n)"></i><span class="gt-label">不審</span></span>
+        </div>
+        <div class="bar-run"><i style="width:0%"></i></div>
+        <div class="foot">
+          <span class="chip idle"><i class="pip" style="background:var(--idle)"></i><span class="chip-txt">等 2c 放行</span></span>
+          <span class="cost">預估 12 點</span>
+        </div>
+      </div>
+
+      <!-- 4 -->
+      <div class="node idle" data-node="n4" data-gate="none" data-status="idle" data-dep="n3" style="left:170px;top:614px;width:240px">
+        <div class="marks"><button class="mk" data-mk="keep" type="button">✓</button><button class="mk" data-mk="fix" type="button">✕</button></div>
+        <div class="idx">步驟 4</div>
+        <h3>嵌字幕、剪入錄屏、輸出</h3>
+        <div class="tool">自建包・剪輯引擎</div>
+        <div class="frame wide"><span class="dur">成品 0:45</span></div>
+        <div class="gate">
+          <span class="lab">審核</span>
+          <span class="sel" data-gate-btn><i class="dt" style="background:var(--gate-n)"></i><span class="gt-label">不審</span></span>
+        </div>
+        <div class="bar-run"><i style="width:0%"></i></div>
+        <div class="foot">
+          <span class="chip idle"><i class="pip" style="background:var(--idle)"></i><span class="chip-txt">等待中</span></span>
+          <span class="cost">預估 20 點</span>
+        </div>
+      </div>
+
+      <!-- add node -->
+      <div class="addnode" id="addnode" style="left:540px;top:614px;width:270px">
+        <div class="lab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          加一格
+        </div>
+        <div class="opts" id="addnodeOpts">
+          <button type="button" data-add="ai">AI 生成</button>
+          <button type="button" data-add="pick">選功能包</button>
+        </div>
+        <div class="confirm" id="addnodeConfirm">已新增節點（示意）</div>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- theme ---------- */
+  var root = document.documentElement;
+  function applyTheme(t){
+    root.setAttribute("data-theme", t);
+    try { localStorage.setItem("demo-theme", t); } catch(e){}
+  }
+  var savedTheme = "dark";
+  try { savedTheme = localStorage.getItem("demo-theme") || "dark"; } catch(e){}
+  applyTheme(savedTheme);
+  document.getElementById("themeToggle").addEventListener("click", function(){
+    applyTheme(root.getAttribute("data-theme") === "dark" ? "light" : "dark");
+  });
+
+  /* ---------- rail tooltips + active toggle ---------- */
+  document.querySelectorAll(".rail-btn[data-pop]").forEach(function(btn){
+    var pop = document.createElement("div");
+    pop.className = "rail-pop";
+    pop.textContent = btn.getAttribute("data-pop");
+    btn.appendChild(pop);
+    btn.addEventListener("mouseenter", function(){ pop.classList.add("show"); });
+    btn.addEventListener("mouseleave", function(){ pop.classList.remove("show"); });
+    if (btn.id !== "themeToggle") {
+      btn.addEventListener("click", function(){
+        document.querySelectorAll(".rail-btn").forEach(function(b){ if (b.id !== "themeToggle") b.classList.remove("active"); });
+        btn.classList.add("active");
+      });
+    }
+  });
+
+  /* ---------- gate model ---------- */
+  var GATES = [
+    { key:"none",  label:"不審",  color:"var(--gate-n)" },
+    { key:"ai",    label:"AI 審", color:"var(--gate-a)" },
+    { key:"human", label:"人審",  color:"var(--gate-h)" }
+  ];
+  function gateInfo(key){ for (var i=0;i<GATES.length;i++) if (GATES[i].key===key) return GATES[i]; return GATES[0]; }
+
+  var stage = document.getElementById("stage");
+  var nodeEls = {};
+  document.querySelectorAll(".node[data-node]").forEach(function(el){ nodeEls[el.getAttribute("data-node")] = el; });
+
+  var openMenu = null;
+  function closeMenu(){ if (openMenu && openMenu.parentNode) openMenu.parentNode.removeChild(openMenu); openMenu = null; }
+  document.addEventListener("click", function(e){
+    if (openMenu && !openMenu.contains(e.target) && !e.target.closest("[data-gate-btn]")) closeMenu();
+  });
+
+  document.querySelectorAll("[data-gate-btn]").forEach(function(sel){
+    sel.addEventListener("click", function(e){
+      e.stopPropagation();
+      if (openMenu && openMenu.dataset.owner === sel) { closeMenu(); return; }
+      closeMenu();
+      var node = sel.closest(".node");
+      var menu = document.createElement("div");
+      menu.className = "gate-menu";
+      menu.dataset.owner = sel;
+      GATES.forEach(function(g){
+        var b = document.createElement("button");
+        b.type = "button";
+        b.innerHTML = '<span class="dt" style="background:'+g.color+'"></span>'+g.label;
+        b.addEventListener("click", function(ev){ ev.stopPropagation(); setGate(node, g.key); closeMenu(); });
+        menu.appendChild(b);
+      });
+      document.body.appendChild(menu);
+      var r = sel.getBoundingClientRect();
+      menu.style.top = (r.bottom + 5) + "px";
+      menu.style.left = r.left + "px";
+      openMenu = menu;
+    });
+  });
+
+  function setGate(node, key){
+    var g = gateInfo(key);
+    node.setAttribute("data-gate", key);
+    var sel = node.querySelector("[data-gate-btn]");
+    sel.querySelector(".dt").style.background = g.color;
+    sel.querySelector(".gt-label").textContent = g.label;
+    var marks = node.querySelector(".marks");
+    if (key === "human") {
+      marks.classList.add("show");
+    } else {
+      marks.classList.remove("show");
+      var st = node.getAttribute("data-status");
+      if (st === "fix" || st === "run") resolveNode(node, "keep", key === "ai" ? "AI 已通過" : "已通過");
+    }
+  }
+
+  function chipMarkup(status, text){
+    var color = status==="keep"?"var(--keep)":status==="run"?"var(--run)":status==="fix"?"var(--fix)":"var(--idle)";
+    return '<i class="pip" style="background:'+color+'"></i><span class="chip-txt">'+text+'</span>';
+  }
+
+  function resolveNode(node, status, chipText){
+    node.classList.remove("keep","run","fix","idle","pulse");
+    node.classList.add(status);
+    node.setAttribute("data-status", status);
+    var chip = node.querySelector(".foot .chip");
+    chip.className = "chip " + status;
+    chip.innerHTML = chipMarkup(status, chipText);
+    var bar = node.querySelector(".bar-run");
+    if (bar) bar.classList.remove("show");
+    var mkKeep = node.querySelector('[data-mk="keep"]');
+    var mkFix = node.querySelector('[data-mk="fix"]');
+    if (mkKeep && mkFix){
+      mkKeep.classList.toggle("on-keep", status === "keep");
+      mkFix.classList.toggle("on-fix", status === "fix");
+    }
+    if (status === "keep") {
+      unlockDependents(node.getAttribute("data-node"));
+      if (getFixTarget() === node.getAttribute("data-node")) hideFixbox();
+    }
+    if (status === "fix") showFixboxFor(node);
+  }
+
+  function unlockDependents(id){
+    Object.keys(nodeEls).forEach(function(depId){
+      var depNode = nodeEls[depId];
+      if (depNode.getAttribute("data-dep") === id && depNode.getAttribute("data-status") === "idle") runThenResolve(depNode);
+    });
+  }
+
+  function runThenResolve(node){
+    node.classList.remove("idle"); node.classList.add("run");
+    node.setAttribute("data-status", "run");
+    var chip = node.querySelector(".foot .chip");
+    chip.className = "chip run"; chip.innerHTML = chipMarkup("run", "生成中");
+    var bar = node.querySelector(".bar-run"); var i = bar ? bar.querySelector("i") : null;
+    if (bar) { bar.classList.add("show"); if (i) i.style.width = "8%"; }
+    setTimeout(function(){
+      if (i) i.style.width = "100%";
+      setTimeout(function(){
+        var gate = node.getAttribute("data-gate");
+        if (gate === "human") {
+          var chip2 = node.querySelector(".foot .chip");
+          chip2.className = "chip run"; chip2.innerHTML = chipMarkup("run", "生成完成・等你確認");
+        } else {
+          resolveNode(node, "keep", gate === "ai" ? "AI 已通過" : "已通過");
+        }
+      }, 700);
+    }, 30);
+  }
+
+  document.querySelectorAll(".mk").forEach(function(btn){
+    btn.addEventListener("click", function(e){
+      e.stopPropagation();
+      var node = btn.closest(".node");
+      var want = btn.getAttribute("data-mk");
+      if (want === "keep") resolveNode(node, "keep", node.getAttribute("data-node") === "n2a" ? "你已放行" : "已通過");
+      else resolveNode(node, "fix", "你打了叉");
+    });
+  });
+
+  /* ---------- fixbox ---------- */
+  var fixbox = document.getElementById("fixbox");
+  var fixboxInput = document.getElementById("fixboxInput");
+  var wireBlocked = document.getElementById("wire-blocked");
+  function getFixTarget(){ return fixbox.getAttribute("data-target"); }
+
+  function showFixboxFor(node){
+    var id = node.getAttribute("data-node");
+    fixbox.setAttribute("data-target", id);
+    fixbox.classList.remove("hide");
+    var rect = node.getBoundingClientRect();
+    var stageRect = stage.getBoundingClientRect();
+    var top = (rect.bottom - stageRect.top) + stage.scrollTop + 16;
+    var left = (rect.left - stageRect.left) + stage.scrollLeft;
+    var maxLeft = stage.scrollWidth - 316;
+    if (left > maxLeft) left = maxLeft;
+    if (left < 10) left = 10;
+    fixbox.style.top = top + "px";
+    fixbox.style.left = left + "px";
+    if (id !== "n2c" && !fixboxInput.textContent.trim()) fixboxInput.textContent = "";
+    wireBlocked.style.display = id === "n2c" ? "" : "none";
+  }
+  function hideFixbox(){ fixbox.classList.add("hide"); fixbox.removeAttribute("data-target"); wireBlocked.style.display = "none"; }
+
+  document.getElementById("btnRerun").addEventListener("click", function(){
+    var id = getFixTarget(); if (!id) return;
+    var node = nodeEls[id];
+    hideFixbox();
+    node.classList.remove("fix"); node.classList.add("run","pulse");
+    node.setAttribute("data-status","run");
+    var chip = node.querySelector(".foot .chip");
+    chip.className = "chip run"; chip.innerHTML = chipMarkup("run", "重新生成中");
+    var mkFix = node.querySelector('[data-mk="fix"]'); if (mkFix) mkFix.classList.remove("on-fix");
+    setTimeout(function(){ node.classList.remove("pulse"); resolveNode(node, "keep", "已通過（重跑後）"); }, 1100);
+  });
+
+  document.getElementById("btnSwapModel").addEventListener("click", function(){
+    var id = getFixTarget(); if (!id) return;
+    var node = nodeEls[id];
+    var toolEl = node.querySelector(".tool");
+    var already = toolEl.querySelector(".tag-alt");
+    if (already) { already.remove(); return; }
+    var span = document.createElement("span");
+    span.className = "tag-alt"; span.textContent = "　· 已切換備用模型";
+    toolEl.appendChild(span);
+  });
+
+  /* ---------- plan buttons ---------- */
+  var btnRun = document.getElementById("btnRun");
+  var btnAdjust = document.getElementById("btnAdjust");
+  var planNote = document.getElementById("planNote");
+
+  btnRun.addEventListener("click", function(){
+    btnRun.setAttribute("disabled","disabled"); btnAdjust.setAttribute("disabled","disabled");
+    planNote.style.display = "block"; planNote.textContent = "已重新送出目前設定，生成中的節點會繼續推進。";
+    var n2b = nodeEls.n2b;
+    if (n2b.getAttribute("data-status") === "run") {
+      var bar = n2b.querySelector(".bar-run i"); if (bar) bar.style.width = "100%";
+      setTimeout(function(){ resolveNode(n2b, "keep", "你已放行"); }, 850);
+    }
+  });
+
+  btnAdjust.addEventListener("click", function(){
+    btnAdjust.setAttribute("disabled","disabled");
+    planNote.style.display = "block"; planNote.textContent = "已切換成調整模式，可以直接在流程圖上點選節點。";
+    Object.keys(nodeEls).forEach(function(id){ nodeEls[id].classList.add("pulse"); });
+    setTimeout(function(){
+      Object.keys(nodeEls).forEach(function(id){ nodeEls[id].classList.remove("pulse"); });
+      btnAdjust.removeAttribute("disabled");
+    }, 1000);
+  });
+
+  /* ---------- add node ---------- */
+  var addnode = document.getElementById("addnode");
+  var addnodeOpts = document.getElementById("addnodeOpts");
+  var addnodeConfirm = document.getElementById("addnodeConfirm");
+  addnode.addEventListener("click", function(e){
+    if (e.target.closest("[data-add]")) return;
+    addnodeOpts.classList.toggle("show"); addnodeConfirm.classList.remove("show");
+  });
+  addnodeOpts.querySelectorAll("[data-add]").forEach(function(btn){
+    btn.addEventListener("click", function(e){
+      e.stopPropagation(); addnodeOpts.classList.remove("show");
+      addnodeConfirm.classList.add("show");
+      setTimeout(function(){ addnodeConfirm.classList.remove("show"); }, 2000);
+    });
+  });
+
+  /* ---------- composer ---------- */
+  var thread = document.getElementById("thread");
+  var composerInput = document.getElementById("composerInput");
+  var sendBtn = document.getElementById("sendBtn");
+  function sendMessage(){
+    var text = composerInput.textContent.trim(); if (!text) return;
+    var msg = document.createElement("div");
+    msg.className = "msg user";
+    msg.innerHTML = '<div class="who">你</div><div class="bubble"></div>';
+    msg.querySelector(".bubble").textContent = text;
+    thread.appendChild(msg);
+    composerInput.textContent = "";
+    thread.scrollTop = thread.scrollHeight;
+  }
+  sendBtn.addEventListener("click", sendMessage);
+  composerInput.addEventListener("keydown", function(e){ if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+
+  document.getElementById("resetBtn").addEventListener("click", function(){ location.reload(); });
+
+  /* ---------- init ---------- */
+  var initFix = null;
+  Object.keys(nodeEls).forEach(function(id){ if (nodeEls[id].getAttribute("data-status") === "fix") initFix = nodeEls[id]; });
+  if (initFix) showFixboxFor(initFix); else hideFixbox();
+})();
+</script>
+</body>
+</html>
