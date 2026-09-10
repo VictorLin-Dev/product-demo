@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>主介面示意圖 — 對話 × 流程圖 × 三檔審核（可互動示範）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#17222E; --ink-soft:#53616F;
+    --paper:#F1F0EC; --paper-edge:#DCDAD3;
+    --slate:#16202B; --slate-lift:#1E2A38; --slate-line:#2C3A4B; --dot:#293747;
+    --petrol:#1F5F7A;
+    --keep:#3F8F5F; --run:#C98A2E; --fix:#C0503F; --idle:#6E7C8B;
+    --gate-h:#B7793C; --gate-a:#5A87A8; --gate-n:#6E7C8B;
+    --sans:"IBM Plex Sans","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+    --mono:"IBM Plex Mono","Noto Sans TC",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family:var(--sans);color:var(--ink);background:#0E161F;-webkit-font-smoothing:antialiased}
+  .app{height:100%;display:grid;grid-template-rows:56px 1fr 66px;grid-template-columns:372px 1fr;
+       grid-template-areas:"bar bar" "chat canvas" "note note"}
+
+  /* top bar */
+  .bar{grid-area:bar;background:var(--slate);border-bottom:1px solid var(--slate-line);
+       display:flex;align-items:center;gap:16px;padding:0 20px;color:#C7D2DD}
+  .proj{font-weight:600;color:#EDF2F7;font-size:15px}
+  .ver{font-family:var(--mono);font-size:11px;color:var(--idle);border:1px solid var(--slate-line);padding:2px 6px;border-radius:3px}
+  .demo-pill{font-family:var(--mono);font-size:10.5px;color:#8FD1B0;border:1px solid rgba(63,143,95,.5);
+    background:rgba(63,143,95,.12);padding:2px 7px;border-radius:20px}
+  .bar .spacer{flex:1}
+  .stat{display:flex;align-items:center;gap:6px;font-size:12.5px;color:#93A3B3}
+  .stat b{color:#E4EBF1;font-weight:500;transition:color .15s}
+  .pip{width:7px;height:7px;border-radius:50%;flex:none}
+  .meter{font-family:var(--mono);font-size:11.5px;color:#93A3B3;border-left:1px solid var(--slate-line);padding-left:16px;line-height:1.45}
+  .meter b{color:#E4EBF1;font-weight:500}
+  .meter i{font-style:normal;color:#6E7C8B}
+  .resetbtn{font:inherit;font-family:var(--mono);font-size:11px;color:#93A3B3;background:transparent;
+    border:1px solid var(--slate-line);border-radius:4px;padding:4px 9px;cursor:pointer}
+  .resetbtn:hover{color:#E4EBF1;border-color:#4A5E74}
+
+  /* chat */
+  .chat{grid-area:chat;background:var(--paper);border-right:1px solid #0B121A;display:flex;flex-direction:column;min-height:0}
+  .chat-head{padding:14px 20px 12px;border-bottom:1px solid var(--paper-edge);display:flex;align-items:baseline;gap:8px}
+  .chat-head h2{margin:0;font-size:13.5px;font-weight:600}
+  .chat-head span{font-size:11.5px;color:var(--ink-soft)}
+  .thread{flex:1;overflow:auto;padding:18px 20px 8px;display:flex;flex-direction:column;gap:15px;scroll-behavior:smooth}
+  .msg{font-size:13.5px;line-height:1.65;animation:fadein .25s ease}
+  @keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+  .msg .who{font-size:11px;color:var(--ink-soft);margin-bottom:5px;font-weight:500}
+  .msg.user .bubble{background:#fff;border:1px solid var(--paper-edge);border-radius:3px 12px 12px 12px;padding:11px 13px}
+  .msg.agent .bubble{padding:0 0 0 12px;border-left:2px solid var(--petrol)}
+  .msg.agent.flag .bubble{border-left-color:var(--fix)}
+  .bubble p{margin:0 0 7px}
+  .bubble p:last-child{margin-bottom:0}
+  .qlist{margin:6px 0 0;padding-left:16px}
+  .qlist li{margin-bottom:3px}
+  .plan{margin:8px 0 0;border:1px solid var(--paper-edge);border-radius:5px;background:#fff;overflow:hidden}
+  .plan div{display:flex;justify-content:space-between;gap:10px;padding:5px 9px;font-size:11.5px;border-bottom:1px solid #EDECE7}
+  .plan div:last-child{border-bottom:0}
+  .plan em{font-style:normal;color:var(--ink-soft)}
+  .acts{display:flex;gap:8px;margin-top:11px}
+  .btn{font:inherit;font-size:12.5px;padding:6px 12px;border-radius:4px;cursor:pointer;border:1px solid var(--petrol);
+       background:transparent;color:var(--petrol);transition:opacity .15s}
+  .btn.solid{background:var(--petrol);color:#fff}
+  .btn:hover{opacity:.8}
+  .btn[disabled]{opacity:.4;cursor:default;pointer-events:none}
+  .inline-note{font-size:11.5px;color:var(--petrol);margin-top:9px;line-height:1.5}
+  .composer{border-top:1px solid var(--paper-edge);padding:12px 20px 16px;background:#EBEAE5}
+  .composer-row{display:flex;gap:8px;align-items:flex-end}
+  .field{flex:1;background:#fff;border:1px solid var(--paper-edge);border-radius:6px;padding:10px 12px;font-size:13px;
+    color:var(--ink);min-height:20px;max-height:80px;overflow:auto;cursor:text}
+  .field:empty::before{content:attr(data-placeholder);color:#9AA3AC}
+  .field:focus{outline:2px solid rgba(31,95,122,.25);border-color:var(--petrol)}
+  .sendbtn{font:inherit;font-size:12.5px;padding:9px 14px;border-radius:6px;border:none;background:var(--petrol);
+    color:#fff;cursor:pointer;flex:none}
+  .sendbtn:hover{opacity:.85}
+  .hint{font-size:11px;color:var(--ink-soft);margin-top:8px;line-height:1.5}
+
+  /* canvas */
+  .canvas{grid-area:canvas;position:relative;overflow:auto;
+    background:radial-gradient(circle at 1px 1px,var(--dot) 1px,transparent 0) 0 0/22px 22px,var(--slate)}
+  .canvas-tag{position:sticky;top:0;left:0;z-index:9;display:flex;gap:14px;align-items:center;flex-wrap:wrap;
+    padding:9px 18px;background:rgba(22,32,43,.94);border-bottom:1px solid var(--slate-line);
+    font-size:11.5px;color:#8FA0B1;backdrop-filter:blur(4px)}
+  .legend{display:flex;align-items:center;gap:5px}
+  .sep{width:1px;height:14px;background:var(--slate-line)}
+  .stage{position:relative;width:880px;height:960px;margin:6px 0 40px}
+  svg.wires{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+
+  .node{position:absolute;background:var(--slate-lift);border:1px solid var(--slate-line);
+        border-radius:7px;padding:11px 12px 10px;color:#D6DFE8;transition:border-color .25s,box-shadow .25s,opacity .25s}
+  .node .idx{font-family:var(--mono);font-size:10.5px;color:var(--idle)}
+  .node h3{margin:3px 0 2px;font-size:13.5px;font-weight:600;color:#EDF2F7}
+  .tool{font-size:11.5px;color:#8FA0B1}
+  .tool .tag-alt{color:#93B6D2}
+  .frame{margin-top:9px;height:70px;border-radius:4px;position:relative;
+    background:linear-gradient(148deg,#31465B,#243547 55%,#2E4256);border:1px solid #35485C;overflow:hidden}
+  .frame.wide{height:50px}
+  .frame::after{content:"";position:absolute;inset:0;
+    background:repeating-linear-gradient(115deg,rgba(255,255,255,.045) 0 2px,transparent 2px 9px)}
+  .frame .dur{position:absolute;right:6px;bottom:5px;z-index:2;font-family:var(--mono);font-size:10px;
+    color:#DCE5ED;background:rgba(10,16,23,.72);padding:1px 5px;border-radius:3px}
+
+  /* gate selector row */
+  .gate{margin-top:9px;display:flex;align-items:center;gap:6px;font-size:11px;
+        border-top:1px solid #29374780;padding-top:8px;position:relative}
+  .gate .lab{color:#6E7C8B;flex:none}
+  .sel{display:inline-flex;align-items:center;gap:5px;padding:3px 7px 3px 8px;border-radius:4px;
+       border:1px solid var(--slate-line);background:#243040;color:#C2CFDB;font-size:11px;cursor:pointer;
+       user-select:none;flex:none}
+  .sel:hover{border-color:#4A5E74}
+  .sel::after{content:"▾";font-size:9px;color:#7E8FA0;margin-left:1px}
+  .sel .dt{width:6px;height:6px;border-radius:1px;flex:none}
+  .sel.human{border-color:rgba(183,121,60,.6);color:#E0AC5E}
+  .sel.ai{border-color:rgba(90,135,168,.6);color:#93B6D2}
+  .gate .why{color:#6E7C8B;font-size:10.5px;margin-left:auto;text-align:right;line-height:1.3}
+  .gate-menu{position:absolute;top:100%;left:0;margin-top:4px;background:#1B2836;border:1px solid var(--slate-line);
+    border-radius:6px;box-shadow:0 10px 24px rgba(0,0,0,.5);z-index:20;overflow:hidden;min-width:118px}
+  .gate-menu button{display:flex;align-items:center;gap:7px;width:100%;text-align:left;font:inherit;font-size:11.5px;
+    color:#D6DFE8;background:none;border:none;padding:7px 10px;cursor:pointer}
+  .gate-menu button:hover{background:#243040}
+  .gate-menu .dt{width:7px;height:7px;border-radius:1px;flex:none}
+
+  .foot{display:flex;align-items:center;justify-content:space-between;margin-top:8px;gap:6px}
+  .chip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;padding:2px 8px 2px 6px;border-radius:20px;white-space:nowrap;transition:background .2s,color .2s}
+  .chip .pip{width:6px;height:6px}
+  .c-keep{background:rgba(63,143,95,.16);color:#7DC79A}
+  .c-run{background:rgba(201,138,46,.16);color:#E0AC5E}
+  .c-fix{background:rgba(192,80,63,.18);color:#E28273}
+  .c-idle{background:rgba(110,124,139,.16);color:#9BAABA}
+  .cost{font-family:var(--mono);font-size:10.5px;color:#7E8FA0;text-align:right;line-height:1.35}
+  .cost i{font-style:normal;color:#93B6D2}
+
+  .marks{position:absolute;top:-10px;right:10px;display:none;gap:5px}
+  .marks.show{display:flex}
+  .mk{width:23px;height:23px;border-radius:50%;display:grid;place-items:center;font-size:12px;
+      line-height:1;border:1px solid var(--slate-line);background:#243040;color:#8FA0B1;cursor:pointer;padding:0;
+      font-family:inherit;transition:background .15s,border-color .15s,color .15s}
+  .mk:hover{border-color:#7E8FA0}
+  .mk.on-keep{background:var(--keep);border-color:var(--keep);color:#fff}
+  .mk.on-fix{background:var(--fix);border-color:var(--fix);color:#fff}
+
+  .node.keep{border-color:rgba(63,143,95,.5)}
+  .node.run{border-color:rgba(201,138,46,.55)}
+  .node.fix{border-color:var(--fix);box-shadow:0 0 0 3px rgba(192,80,63,.13)}
+  .node.idle{opacity:.68}
+  .node.pulse{box-shadow:0 0 0 3px rgba(201,138,46,.35)}
+  .bar-run{height:3px;background:#2C3A4B;border-radius:2px;margin-top:9px;overflow:hidden;display:none}
+  .bar-run.show{display:block}
+  .bar-run i{display:block;height:100%;width:62%;background:var(--run);transition:width .8s linear}
+  .src{background:#1B2836;border-style:dashed}
+  .src .fname{font-family:var(--mono);font-size:11.5px;color:#B9C6D3;margin-top:5px}
+
+  .addnode{position:absolute;border:1px dashed #3C4E62;border-radius:7px;background:rgba(30,42,56,.5);
+    color:#7E8FA0;padding:10px 12px;font-size:12px;line-height:1.5;cursor:pointer;transition:border-color .2s,background .2s}
+  .addnode:hover{border-color:#5A87A8;background:rgba(30,42,56,.75)}
+  .addnode b{display:block;color:#A9BAC9;font-size:12.5px;font-weight:600;margin-bottom:4px}
+  .addnode span{display:block;font-size:11px}
+  .addnode .opts{display:none;gap:8px;margin-top:9px}
+  .addnode .opts.show{display:flex}
+  .addnode .opts button{font:inherit;font-size:11px;padding:6px 10px;border-radius:5px;border:1px solid #3C4E62;
+    background:#1B2836;color:#C2CFDB;cursor:pointer}
+  .addnode .opts button:hover{border-color:#5A87A8;color:#fff}
+  .addnode .confirm{display:none;color:#8FD1B0;font-size:11.5px;margin-top:8px}
+  .addnode .confirm.show{display:block}
+
+  /* fix box */
+  .fixbox{position:absolute;background:#F1F0EC;color:var(--ink);border-radius:8px;border:1px solid #C9C6BE;
+    box-shadow:0 14px 34px rgba(0,0,0,.45);padding:13px 14px;transition:top .3s,left .3s;z-index:10}
+  .fixbox.hide{display:none}
+  .fixbox h4{margin:0 0 3px;font-size:13px;font-weight:600}
+  .fixbox .lead{font-size:11.5px;color:var(--ink-soft);margin:0 0 9px;line-height:1.5}
+  .fixbox .input{background:#fff;border:1px solid #D3D0C9;border-radius:5px;padding:9px 10px;
+    font-size:12.5px;line-height:1.55;min-height:50px;cursor:text}
+  .fixbox .input:empty::before{content:attr(data-placeholder);color:#9AA3AC}
+  .fixbox .input:focus{outline:2px solid rgba(31,95,122,.2)}
+  .fixbox .acts{margin-top:10px}
+  .fixbox .btn{font-size:12px;padding:5px 10px}
+  .cascade{margin-top:10px;padding-top:9px;border-top:1px dashed #CFCCC4;font-size:11.5px;color:var(--ink-soft);line-height:1.55}
+  .cascade b{color:var(--fix);font-weight:600}
+
+  /* bottom */
+  .note{grid-area:note;background:#0E161F;border-top:1px solid #223141;
+        display:grid;grid-template-columns:repeat(4,1fr);align-items:center}
+  .note div{padding:0 20px;border-right:1px solid #1B2836;height:100%;display:flex;flex-direction:column;justify-content:center;gap:3px}
+  .note div:last-child{border-right:0}
+  .note strong{font-size:12.5px;color:#DCE5ED;font-weight:600}
+  .note span{font-size:11.5px;color:#7E8FA0;line-height:1.45}
+
+  @media (max-width:1080px){
+    .app{grid-template-columns:1fr;grid-template-rows:56px 290px 1fr 110px;
+         grid-template-areas:"bar" "chat" "canvas" "note"}
+    .chat{border-right:0;border-bottom:1px solid #0B121A}
+    .note{grid-template-columns:1fr 1fr}
+    .note div:nth-child(2){border-right:0}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="bar">
+    <span class="proj">券商 App 廣告影片</span>
+    <span class="ver">v3・自動存檔</span>
+    <span class="demo-pill">示範版・可點擊</span>
+    <span class="spacer"></span>
+    <button class="resetbtn" id="resetBtn" type="button">重置示範</button>
+    <span class="stat"><i class="pip" style="background:var(--keep)"></i><b id="cnt-keep">2</b> 已通過</span>
+    <span class="stat"><i class="pip" style="background:var(--run)"></i><b id="cnt-run">1</b> 生成中</span>
+    <span class="stat"><i class="pip" style="background:var(--fix)"></i><b id="cnt-fix">1</b> 需修改</span>
+    <span class="stat"><i class="pip" style="background:var(--idle)"></i><b id="cnt-idle">2</b> 等待中</span>
+    <span class="meter">執行 <b>468</b> ＋ 審核 <b>6</b> ＝ 預估 <b>474</b> 點<br><i>已扣 316 點・停在步驟 2c</i></span>
+  </header>
+
+  <!-- chat -->
+  <section class="chat">
+    <div class="chat-head"><h2>主 Agent</h2><span>規劃、排程、決定哪幾格要停</span></div>
+    <div class="thread" id="thread">
+
+      <div class="msg user">
+        <div class="who">你</div>
+        <div class="bubble">我要做一支 App 廣告影片。人物實際操作我們的 App，中間放產品錄屏。主打進階玩家可用指標設定定期定額，新手也有簡單介面。
+          <br><span style="color:var(--ink-soft)">已附上　操作錄屏.mp4、產品說明.pdf</span></div>
+      </div>
+
+      <div class="msg agent">
+        <div class="who">主 Agent</div>
+        <div class="bubble"><p>開工前確認兩件事：</p>
+          <ol class="qlist"><li>影片長度抓 30 秒還是 45 秒？</li><li>節奏偏冷靜說明，還是快剪？</li></ol></div>
+      </div>
+
+      <div class="msg user">
+        <div class="who">你</div>
+        <div class="bubble">45 秒，整體快剪，但講定期定額功能那段要慢下來。</div>
+      </div>
+
+      <div class="msg agent">
+        <div class="who">主 Agent</div>
+        <div class="bubble">
+          <p>流程排好了，6 個步驟。三段影片沒有相依，同時生成；字幕等影片，合成排最後。</p>
+          <p>只有三段 AI 影片我設成停下來給你看，因為那三格最貴也最容易歪。聽寫和輸出我直接跑完。</p>
+          <div class="plan">
+            <div><span>會停下來等你</span><em>2a、2b、2c</em></div>
+            <div><span>自動跑完</span><em>1、3、4</em></div>
+            <div><span>預估</span><em>474 點・約 6 分鐘</em></div>
+          </div>
+          <div class="acts">
+            <button class="btn solid" id="btnRun" type="button">開始執行</button>
+            <button class="btn" id="btnAdjust" type="button">先調整流程</button>
+          </div>
+          <div class="inline-note" id="planNote" style="display:none"></div>
+        </div>
+      </div>
+
+      <div class="msg agent flag">
+        <div class="who">主 Agent</div>
+        <div class="bubble">
+          <p>第 2c 段的滑動手勢和錄屏第 3 秒對不上，我標成需修改，下游沒有往下跑。</p>
+          <p>你可以在那一格直接說要改什麼，或告訴我，我幫你改。</p>
+        </div>
+      </div>
+
+    </div>
+    <div class="composer">
+      <div class="composer-row">
+        <div class="field" id="composerInput" contenteditable="true" data-placeholder="跟主 Agent 說話…"></div>
+        <button class="sendbtn" id="sendBtn" type="button">送出</button>
+      </div>
+      <p class="hint">任何一格出問題都只重跑那一格。要停在哪幾格，你隨時可以改。</p>
+    </div>
+  </section>
+
+  <!-- canvas -->
+  <section class="canvas" id="canvas">
+    <div class="canvas-tag">
+      <span style="color:#B9C6D3">流程圖</span>
+      <span class="legend"><i class="pip" style="background:var(--keep)"></i>已通過</span>
+      <span class="legend"><i class="pip" style="background:var(--run)"></i>生成中</span>
+      <span class="legend"><i class="pip" style="background:var(--fix)"></i>需修改</span>
+      <span class="legend"><i class="pip" style="background:var(--idle)"></i>等待中</span>
+      <span class="sep"></span>
+      <span>審核方式</span>
+      <span class="legend"><i class="pip" style="background:var(--gate-h)"></i>人審・停住等你</span>
+      <span class="legend"><i class="pip" style="background:var(--gate-a)"></i>AI 審・耗 token</span>
+      <span class="legend"><i class="pip" style="background:var(--gate-n)"></i>不審・直接放行</span>
+      <span style="margin-left:auto;font-family:var(--mono);font-size:11px">點節點上的審核選單或打勾／打叉試試</span>
+    </div>
+
+    <div class="stage" id="stage">
+      <svg class="wires" viewBox="0 0 880 900" preserveAspectRatio="none">
+        <defs>
+          <marker id="ar" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0,0 L8,4 L0,8 z" fill="#4A5E74"/></marker>
+          <marker id="ard" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0,0 L8,4 L0,8 z" fill="#3A4A5C"/></marker>
+        </defs>
+        <g fill="none" stroke="#4A5E74" stroke-width="1.4" marker-end="url(#ar)">
+          <path d="M400,172 V202 H135 V226"/>
+          <path d="M400,172 V202 H395 V226"/>
+          <path d="M400,172 V202 H655 V226"/>
+          <path d="M135,438 V460 H270 V480"/>
+          <path d="M395,438 V460 H270 V480"/>
+          <path d="M270,610 V706"/>
+          <path d="M210,70 H100 V712 H146"/>
+        </g>
+        <path id="wire-2c-3" d="M655,438 V460 H270 V480" fill="none" stroke="#3A4A5C" stroke-width="1.4"
+              stroke-dasharray="5 5" marker-end="url(#ard)"/>
+        <text id="wire-label" x="452" y="454" fill="#6E7C8B" font-size="10.5" font-family="IBM Plex Mono, monospace">下游已阻擋</text>
+      </svg>
+
+      <div class="node src" style="left:20px;top:30px;width:190px">
+        <div class="idx">素材</div>
+        <h3 style="font-size:12.5px;margin-top:2px">你上傳的檔案</h3>
+        <div class="fname">操作錄屏.mp4</div>
+        <div class="fname">產品說明.pdf</div>
+      </div>
+
+      <!-- 1 -->
+      <div class="node keep" data-node="n1" data-gate="none" data-status="keep" style="left:250px;top:30px;width:300px">
+        <div class="marks"><button class="mk" data-mk="keep" type="button">✓</button><button class="mk" data-mk="fix" type="button">✕</button></div>
+        <div class="idx">步驟 1</div>
+        <h3>腳本與分鏡</h3>
+        <div class="tool">語言模型・依產品說明拆成 3 段</div>
+        <div class="gate">
+          <span class="lab">審核</span>
+          <span class="sel" data-gate-btn><i class="dt" style="background:var(--gate-n)"></i><span class="gt-label">不審</span></span>
+          <span class="why">便宜、改起來快，出錯成本低</span>
+        </div>
+        <div class="foot">
+          <span class="chip c-keep"><i class="pip" style="background:var(--keep)"></i><span class="chip-txt">已通過</span></span>
+          <span class="cost">執行 4 點・8 秒</span>
+        </div>
+      </div>
+
+      <!-- 2a -->
+      <div class="node keep" data-node="n2a" data-gate="human" data-status="keep" style="left:20px;top:226px;width:230px">
+        <div class="marks show"><button class="mk on-keep" data-mk="keep" type="button">✓</button><button class="mk" data-mk="fix" type="button">✕</button></div>
+        <div class="idx">步驟 2a</div>
+        <h3>開場：人物拿起手機</h3>
+        <div class="tool">影片模型</div>
+        <div class="frame"><span class="dur">0:00–0:12</span></div>
+        <div class="gate">
+          <span class="lab">審核</span>
+          <span class="sel human" data-gate-btn><i class="dt" style="background:var(--gate-h)"></i><span class="gt-label">人審</span></span>
+        </div>
+        <div class="foot">
+          <span class="chip c-keep"><i class="pip" style="background:var(--keep)"></i><span class="chip-txt">你已放行</span></span>
+          <span class="cost">執行 96 點</span>
+        </div>
+      </div>
+
+      <!-- 2b -->
+      <div class="node run" data-node="n2b" data-gate="human" data-status="run" style="left:280px;top:226px;width:230px">
+        <div class="marks show"><button class="mk" data-mk="keep" type="button">✓</button><button class="mk" data-mk="fix" type="button">✕</button></div>
+        <div class="idx">步驟 2b</div>
+        <h3>功能段：定期定額設定</h3>
+        <div class="tool">影片模型</div>
+        <div class="frame"><span class="dur">0:12–0:33</span></div>
+        <div class="gate">
+          <span class="lab">審核</span>
+          <span class="sel human" data-gate-btn><i class="dt" style="background:var(--gate-h)"></i><span class="gt-label">人審</span></span>
+        </div>
+        <div class="bar-run show"><i style="width:62%"></i></div>
+        <div class="foot">
+          <span class="chip c-run"><i class="pip" style="background:var(--run)"></i><span class="chip-txt">生成中 62%</span></span>
+          <span class="cost">預估 148 點</span>
+        </div>
+      </div>
+
+      <!-- 2c -->
+      <div class="node fix" data-node="n2c" data-gate="human" data-status="fix" style="left:540px;top:226px;width:230px">
+        <div class="marks show"><button class="mk" data-mk="keep" type="button">✓</button><button class="mk on-fix" data-mk="fix" type="button">✕</button></div>
+        <div class="idx">步驟 2c</div>
+        <h3>收尾：新手介面</h3>
+        <div class="tool">影片模型</div>
+        <div class="frame"><span class="dur">0:33–0:45</span></div>
+        <div class="gate">
+          <span class="lab">審核</span>
+          <span class="sel human" data-gate-btn><i class="dt" style="background:var(--gate-h)"></i><span class="gt-label">人審</span></span>
+        </div>
+        <div class="foot">
+          <span class="chip c-fix"><i class="pip" style="background:var(--fix)"></i><span class="chip-txt">你打了叉</span></span>
+          <span class="cost">已扣 88 點</span>
+        </div>
+      </div>
+
+      <!-- fixbox (shared, JS moves it to whichever node is in "fix") -->
+      <div class="fixbox" id="fixbox" style="left:466px;top:462px;width:324px">
+        <h4 id="fixboxTitle">這一格要改什麼？</h4>
+        <p class="lead" id="fixboxLead">手勢和錄屏第 3 秒對不上。改完只重跑這一格。</p>
+        <div class="input" id="fixboxInput" contenteditable="true" data-placeholder="描述你要怎麼修改…">滑動手勢改成由下往上，速度放慢，跟錄屏第 3 秒的畫面對齊</div>
+        <div class="acts">
+          <button class="btn solid" id="btnRerun" type="button">重跑這一格</button>
+          <button class="btn" id="btnSwapModel" type="button">換一個模型試</button>
+        </div>
+        <div class="cascade" id="fixboxCascade">重跑後，下游的 <b>步驟 3</b> 與 <b>步驟 4</b> 會自動失效並重排；已放行的節點不重跑、不重複計費。</div>
+      </div>
+
+      <!-- 3 -->
+      <div class="node idle" data-node="n3" data-gate="none" data-status="idle" data-dep="n2c" style="left:150px;top:480px;width:240px">
+        <div class="marks"><button class="mk" data-mk="keep" type="button">✓</button><button class="mk" data-mk="fix" type="button">✕</button></div>
+        <div class="idx">步驟 3</div>
+        <h3>AI 聽寫、產生字幕</h3>
+        <div class="tool">語音辨識・繁中斷句</div>
+        <div class="gate">
+          <span class="lab">審核</span>
+          <span class="sel" data-gate-btn><i class="dt" style="background:var(--gate-n)"></i><span class="gt-label">不審</span></span>
+          <span class="why">重複性辨識<br>AI 比人工核對準</span>
+        </div>
+        <div class="bar-run"><i style="width:0%"></i></div>
+        <div class="foot">
+          <span class="chip c-idle"><i class="pip" style="background:var(--idle)"></i><span class="chip-txt">等 2c 放行</span></span>
+          <span class="cost">預估 12 點</span>
+        </div>
+      </div>
+
+      <!-- 4 -->
+      <div class="node idle" data-node="n4" data-gate="none" data-status="idle" data-dep="n3" style="left:150px;top:706px;width:240px">
+        <div class="marks"><button class="mk" data-mk="keep" type="button">✓</button><button class="mk" data-mk="fix" type="button">✕</button></div>
+        <div class="idx">步驟 4</div>
+        <h3>嵌字幕、剪入錄屏、輸出</h3>
+        <div class="tool">自建包・剪輯引擎</div>
+        <div class="frame wide"><span class="dur">成品 0:45</span></div>
+        <div class="gate">
+          <span class="lab">審核</span>
+          <span class="sel" data-gate-btn><i class="dt" style="background:var(--gate-n)"></i><span class="gt-label">不審</span></span>
+          <span class="why">確定性動作<br>輸入相同輸出相同</span>
+        </div>
+        <div class="bar-run"><i style="width:0%"></i></div>
+        <div class="foot">
+          <span class="chip c-idle"><i class="pip" style="background:var(--idle)"></i><span class="chip-txt">等待中</span></span>
+          <span class="cost">預估 20 點</span>
+        </div>
+      </div>
+
+      <!-- add node -->
+      <div class="addnode" id="addnode" style="left:466px;top:700px;width:324px">
+        <b>＋　加一格</b>
+        <span>① 講一句話，讓 AI 生一格　②　從功能包清單自己挑</span>
+        <span style="margin-top:6px;color:#6E7C8B">MVP 階段：使用者在這裡接上自己的 API key 與工具</span>
+        <div class="opts" id="addnodeOpts">
+          <button type="button" data-add="ai">① AI 生成</button>
+          <button type="button" data-add="pick">② 選功能包</button>
+        </div>
+        <div class="confirm" id="addnodeConfirm">已新增節點（示意，尚未串接後端）</div>
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="note">
+    <div><strong>先看計畫再花錢</strong><span>流程圖、會停在哪幾格、執行與審核成本，執行前全部攤開。</span></div>
+    <div><strong>只停該停的格子</strong><span>貴又容易出錯的才人審；確定性動作直接放行。預設能不審就不審。</span></div>
+    <div><strong>錯一格只重跑一格</strong><span>上游不重算不重扣，下游自動失效重排。</span></div>
+    <div><strong>專案留在這裡</strong><span>腳本、分鏡、字幕、時間軸分開存檔，下次打開接著改。</span></div>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var GATES = [
+    { key: "none",  label: "不審",   color: "var(--gate-n)", cls: "" },
+    { key: "ai",    label: "AI 審",  color: "var(--gate-a)", cls: "ai" },
+    { key: "human", label: "人審",   color: "var(--gate-h)", cls: "human" }
+  ];
+  function gateInfo(key){ for (var i=0;i<GATES.length;i++) if (GATES[i].key===key) return GATES[i]; return GATES[0]; }
+
+  var stage = document.getElementById("stage");
+  var nodeEls = {};
+  document.querySelectorAll(".node[data-node]").forEach(function(el){
+    nodeEls[el.getAttribute("data-node")] = el;
+  });
+
+  /* ---------- counters ---------- */
+  function recount(){
+    var c = { keep:0, run:0, fix:0, idle:0 };
+    Object.keys(nodeEls).forEach(function(id){
+      var st = nodeEls[id].getAttribute("data-status");
+      if (c[st] !== undefined) c[st]++;
+    });
+    document.getElementById("cnt-keep").textContent = c.keep;
+    document.getElementById("cnt-run").textContent = c.run;
+    document.getElementById("cnt-fix").textContent = c.fix;
+    document.getElementById("cnt-idle").textContent = c.idle;
+  }
+
+  /* ---------- gate dropdown ---------- */
+  var openMenu = null;
+  function closeMenu(){
+    if (openMenu && openMenu.parentNode) openMenu.parentNode.removeChild(openMenu);
+    openMenu = null;
+  }
+  document.addEventListener("click", function(e){
+    if (openMenu && !openMenu.contains(e.target) && !e.target.closest("[data-gate-btn]")) closeMenu();
+  });
+
+  document.querySelectorAll("[data-gate-btn]").forEach(function(sel){
+    sel.addEventListener("click", function(e){
+      e.stopPropagation();
+      if (openMenu && openMenu.dataset.owner === sel) { closeMenu(); return; }
+      closeMenu();
+      var node = sel.closest(".node");
+      var menu = document.createElement("div");
+      menu.className = "gate-menu";
+      menu.dataset.owner = sel;
+      GATES.forEach(function(g){
+        var b = document.createElement("button");
+        b.type = "button";
+        b.innerHTML = '<span class="dt" style="background:'+g.color+'"></span>'+g.label;
+        b.addEventListener("click", function(ev){
+          ev.stopPropagation();
+          setGate(node, g.key);
+          closeMenu();
+        });
+        menu.appendChild(b);
+      });
+      sel.parentNode.appendChild(menu);
+      openMenu = menu;
+    });
+  });
+
+  function setGate(node, key){
+    var g = gateInfo(key);
+    node.setAttribute("data-gate", key);
+    var sel = node.querySelector("[data-gate-btn]");
+    sel.className = "sel" + (g.cls ? " " + g.cls : "");
+    sel.querySelector(".dt").style.background = g.color;
+    sel.querySelector(".gt-label").textContent = g.label;
+
+    var marks = node.querySelector(".marks");
+    if (key === "human") {
+      marks.classList.add("show");
+    } else {
+      marks.classList.remove("show");
+      var st = node.getAttribute("data-status");
+      if (st === "fix" || st === "run") {
+        // no human reviewer anymore -> auto pass (AI 審 or 不審 both resolve automatically in this demo)
+        resolveNode(node, "keep", key === "ai" ? "AI 已通過" : "已通過");
+      }
+    }
+  }
+
+  /* ---------- node status ---------- */
+  function chipMarkup(status, text){
+    var color = status === "keep" ? "var(--keep)" : status === "run" ? "var(--run)" : status === "fix" ? "var(--fix)" : "var(--idle)";
+    return '<i class="pip" style="background:'+color+'"></i><span class="chip-txt">'+text+'</span>';
+  }
+
+  function resolveNode(node, status, chipText){
+    node.classList.remove("keep","run","fix","idle","pulse");
+    node.classList.add(status);
+    node.setAttribute("data-status", status);
+    var chip = node.querySelector(".foot .chip");
+    chip.className = "chip c-" + status;
+    chip.innerHTML = chipMarkup(status, chipText);
+    var bar = node.querySelector(".bar-run");
+    if (bar) bar.classList.remove("show");
+    var marksWrap = node.querySelector(".marks");
+    var mkKeep = node.querySelector('[data-mk="keep"]');
+    var mkFix = node.querySelector('[data-mk="fix"]');
+    if (mkKeep && mkFix){
+      mkKeep.classList.toggle("on-keep", status === "keep");
+      mkFix.classList.toggle("on-fix", status === "fix");
+    }
+    recount();
+
+    if (status === "keep") {
+      unlockDependents(node.getAttribute("data-node"));
+      if (getFixTarget() === node.getAttribute("data-node")) hideFixbox();
+    }
+    if (status === "fix") {
+      showFixboxFor(node);
+    }
+  }
+
+  function unlockDependents(id){
+    Object.keys(nodeEls).forEach(function(depId){
+      var depNode = nodeEls[depId];
+      if (depNode.getAttribute("data-dep") === id && depNode.getAttribute("data-status") === "idle") {
+        runThenResolve(depNode);
+      }
+    });
+  }
+
+  function runThenResolve(node){
+    node.classList.remove("idle");
+    node.classList.add("run");
+    node.setAttribute("data-status", "run");
+    var chip = node.querySelector(".foot .chip");
+    chip.className = "chip c-run";
+    chip.innerHTML = chipMarkup("run", "生成中");
+    var bar = node.querySelector(".bar-run");
+    var i = bar ? bar.querySelector("i") : null;
+    if (bar) { bar.classList.add("show"); if (i) i.style.width = "8%"; }
+    recount();
+    setTimeout(function(){
+      if (i) i.style.width = "100%";
+      setTimeout(function(){
+        var gate = node.getAttribute("data-gate");
+        if (gate === "human") {
+          var chip2 = node.querySelector(".foot .chip");
+          chip2.className = "chip c-run";
+          chip2.innerHTML = chipMarkup("run", "生成完成・等你確認");
+          node.setAttribute("data-status", "run");
+          recount();
+        } else {
+          resolveNode(node, "keep", gate === "ai" ? "AI 已通過" : "已通過");
+        }
+      }, 700);
+    }, 30);
+  }
+
+  /* ---------- ✓ / ✕ mark buttons ---------- */
+  document.querySelectorAll(".mk").forEach(function(btn){
+    btn.addEventListener("click", function(e){
+      e.stopPropagation();
+      var node = btn.closest(".node");
+      var want = btn.getAttribute("data-mk");
+      var idx = node.querySelector(".idx").textContent.replace("步驟","步驟 ").trim();
+      if (want === "keep") {
+        resolveNode(node, "keep", node.getAttribute("data-node") === "n2a" ? "你已放行" : "已通過");
+      } else {
+        resolveNode(node, "fix", "你打了叉");
+      }
+    });
+  });
+
+  /* ---------- fixbox ---------- */
+  var fixbox = document.getElementById("fixbox");
+  var fixboxTitle = document.getElementById("fixboxTitle");
+  var fixboxLead = document.getElementById("fixboxLead");
+  var fixboxInput = document.getElementById("fixboxInput");
+  var fixboxCascade = document.getElementById("fixboxCascade");
+  var wireLabel = document.getElementById("wire-label");
+  var wire2c3 = document.getElementById("wire-2c-3");
+
+  function getFixTarget(){ return fixbox.getAttribute("data-target"); }
+
+  function depLabel(id){
+    var names = { n1:"步驟 1", n2a:"步驟 2a", n2b:"步驟 2b", n2c:"步驟 2c", n3:"步驟 3", n4:"步驟 4" };
+    return names[id] || id;
+  }
+
+  function downstreamOf(id){
+    var out = [];
+    Object.keys(nodeEls).forEach(function(k){
+      if (nodeEls[k].getAttribute("data-dep") === id) out.push(k);
+    });
+    return out;
+  }
+
+  function showFixboxFor(node){
+    var id = node.getAttribute("data-node");
+    fixbox.setAttribute("data-target", id);
+    fixbox.classList.remove("hide");
+    var rect = node.getBoundingClientRect();
+    var stageRect = stage.getBoundingClientRect();
+    var top = (rect.bottom - stageRect.top) + stage.scrollTop + 16;
+    var left = (rect.left - stageRect.left) + stage.scrollLeft;
+    var maxLeft = stage.scrollWidth - 330;
+    if (left > maxLeft) left = maxLeft;
+    if (left < 10) left = 10;
+    fixbox.style.top = top + "px";
+    fixbox.style.left = left + "px";
+
+    fixboxTitle.textContent = "這一格要改什麼？";
+    if (id === "n2c") {
+      fixboxLead.textContent = "手勢和錄屏第 3 秒對不上。改完只重跑這一格。";
+      if (!fixboxInput.textContent.trim()) fixboxInput.textContent = "滑動手勢改成由下往上，速度放慢，跟錄屏第 3 秒的畫面對齊";
+    } else {
+      fixboxLead.textContent = depLabel(id) + " 被標成需修改。描述要怎麼改，改完只重跑這一格。";
+      fixboxInput.textContent = "";
+    }
+    var down = downstreamOf(id);
+    if (down.length) {
+      fixboxCascade.innerHTML = "重跑後，下游的 " + down.map(function(d){ return "<b>"+depLabel(d)+"</b>"; }).join("、") +
+        " 會自動失效並重排；已放行的節點不重跑、不重複計費。";
+    } else {
+      fixboxCascade.innerHTML = "這一格沒有下游節點，重跑後直接更新結果。";
+    }
+
+    if (id === "n2c") {
+      wire2c3.style.display = "";
+      wireLabel.style.display = "";
+    } else {
+      wire2c3.style.display = "none";
+      wireLabel.style.display = "none";
+    }
+  }
+
+  function hideFixbox(){
+    fixbox.classList.add("hide");
+    fixbox.removeAttribute("data-target");
+    wire2c3.style.display = "none";
+    wireLabel.style.display = "none";
+  }
+
+  document.getElementById("btnRerun").addEventListener("click", function(){
+    var id = getFixTarget();
+    if (!id) return;
+    var node = nodeEls[id];
+    hideFixbox();
+    node.classList.remove("fix");
+    node.classList.add("run", "pulse");
+    node.setAttribute("data-status", "run");
+    var chip = node.querySelector(".foot .chip");
+    chip.className = "chip c-run";
+    chip.innerHTML = chipMarkup("run", "重新生成中");
+    var mkFix = node.querySelector('[data-mk="fix"]');
+    if (mkFix) mkFix.classList.remove("on-fix");
+    recount();
+    setTimeout(function(){
+      node.classList.remove("pulse");
+      resolveNode(node, "keep", "已通過（重跑後）");
+    }, 1100);
+  });
+
+  document.getElementById("btnSwapModel").addEventListener("click", function(){
+    var id = getFixTarget();
+    if (!id) return;
+    var node = nodeEls[id];
+    var toolEl = node.querySelector(".tool");
+    var already = toolEl.querySelector(".tag-alt");
+    if (already) { already.remove(); return; }
+    var span = document.createElement("span");
+    span.className = "tag-alt";
+    span.textContent = "　· 已切換備用模型";
+    toolEl.appendChild(span);
+  });
+
+  /* ---------- top plan buttons ---------- */
+  var btnRun = document.getElementById("btnRun");
+  var btnAdjust = document.getElementById("btnAdjust");
+  var planNote = document.getElementById("planNote");
+
+  btnRun.addEventListener("click", function(){
+    btnRun.setAttribute("disabled", "disabled");
+    btnAdjust.setAttribute("disabled", "disabled");
+    planNote.style.display = "block";
+    planNote.textContent = "已重新送出目前設定，生成中的節點會繼續推進。";
+    var n2b = nodeEls.n2b;
+    if (n2b.getAttribute("data-status") === "run") {
+      var bar = n2b.querySelector(".bar-run i");
+      if (bar) bar.style.width = "100%";
+      setTimeout(function(){ resolveNode(n2b, "keep", "你已放行"); }, 850);
+    }
+  });
+
+  btnAdjust.addEventListener("click", function(){
+    btnAdjust.setAttribute("disabled", "disabled");
+    planNote.style.display = "block";
+    planNote.textContent = "已切換成調整模式，可以直接在右邊流程圖點選節點修改。";
+    Object.keys(nodeEls).forEach(function(id){ nodeEls[id].classList.add("pulse"); });
+    setTimeout(function(){
+      Object.keys(nodeEls).forEach(function(id){ nodeEls[id].classList.remove("pulse"); });
+      btnAdjust.removeAttribute("disabled");
+    }, 1000);
+  });
+
+  /* ---------- add node ---------- */
+  var addnode = document.getElementById("addnode");
+  var addnodeOpts = document.getElementById("addnodeOpts");
+  var addnodeConfirm = document.getElementById("addnodeConfirm");
+  addnode.addEventListener("click", function(e){
+    if (e.target.closest("[data-add]")) return;
+    addnodeOpts.classList.toggle("show");
+    addnodeConfirm.classList.remove("show");
+  });
+  addnodeOpts.querySelectorAll("[data-add]").forEach(function(btn){
+    btn.addEventListener("click", function(e){
+      e.stopPropagation();
+      addnodeOpts.classList.remove("show");
+      addnodeConfirm.textContent = btn.getAttribute("data-add") === "ai"
+        ? "已請 AI 生成新節點（示意，尚未串接後端）"
+        : "已從功能包清單加入節點（示意，尚未串接後端）";
+      addnodeConfirm.classList.add("show");
+      setTimeout(function(){ addnodeConfirm.classList.remove("show"); }, 2200);
+    });
+  });
+
+  /* ---------- chat composer ---------- */
+  var thread = document.getElementById("thread");
+  var composerInput = document.getElementById("composerInput");
+  var sendBtn = document.getElementById("sendBtn");
+
+  function sendMessage(){
+    var text = composerInput.textContent.trim();
+    if (!text) return;
+    var msg = document.createElement("div");
+    msg.className = "msg user";
+    msg.innerHTML = '<div class="who">你</div><div class="bubble"></div>';
+    msg.querySelector(".bubble").textContent = text;
+    thread.appendChild(msg);
+    composerInput.textContent = "";
+    thread.scrollTop = thread.scrollHeight;
+  }
+  sendBtn.addEventListener("click", sendMessage);
+  composerInput.addEventListener("keydown", function(e){
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+
+  /* ---------- reset ---------- */
+  document.getElementById("resetBtn").addEventListener("click", function(){
+    location.reload();
+  });
+
+  var initFix = null;
+  Object.keys(nodeEls).forEach(function(id){
+    if (nodeEls[id].getAttribute("data-status") === "fix") initFix = nodeEls[id];
+  });
+  if (initFix) { showFixboxFor(initFix); } else { hideFixbox(); }
+
+  recount();
+})();
+</script>
+
+</body>
+</html>
